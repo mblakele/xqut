@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ : Copyright (c) 2011 Michael Blakeley. All Rights Reserved.
+ :
+ : Licensed under the Apache License, Version 2.0 (the "License");
+ : you may not use this file except in compliance with the License.
+ : You may obtain a copy of the License at
+ :
+ : http://www.apache.org/licenses/LICENSE-2.0
+ :
+ : Unless required by applicable law or agreed to in writing, software
+ : distributed under the License is distributed on an "AS IS" BASIS,
+ : WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ : See the License for the specific language governing permissions and
+ : limitations under the License.
+ :
+ : The use of the Apache License does not indicate that this project is
+ : affiliated with the Apache Software Foundation.
+ -->
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="qualified"
+    targetNamespace="com.blakeley.xqut"
+    xmlns:t="com.blakeley.xqut">
+  <xs:element name="suite">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="t:environment"/>
+        <xs:element maxOccurs="unbounded" ref="t:setup"/>
+        <xs:element maxOccurs="unbounded" ref="t:unit"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="environment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="t:import"/>
+      </xs:sequence>
+      <xs:attribute name="database-name" use="required" type="xs:NCName"/>
+      <xs:attribute name="root" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="import">
+    <xs:complexType>
+      <xs:attribute name="at" use="required" type="xs:string"/>
+      <xs:attribute name="ns" use="required" type="xs:anyURI"/>
+      <xs:attribute name="prefix" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="setup" type="xs:string"/>
+  <xs:element name="unit">
+    <xs:complexType mixed="true">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="t:expr"/>
+        <xs:element ref="t:result"/>
+      </xs:choice>
+      <xs:attribute name="note" type="xs:string"/>
+      <xs:attribute name="result" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="expr" type="xs:string"/>
+  <xs:element name="result">
+    <xs:annotation>
+    <xs:documentation>allow anything</xs:documentation></xs:annotation>
+    <xs:complexType mixed="true">
+      <xs:complexContent>
+        <xs:restriction base="xs:anyType">
+          <xs:sequence>
+            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:restriction>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
