@@ -123,7 +123,7 @@ This is a more complex example.
                 at="/lib-bar.xqy"/>
       </environment>
       <setup>xdmp:collection-delete('TEST')</setup>
-      <setup note="load sample documents>
+      <setup note="load sample documents">
         for $e in xdmp:filesystem-directory(
           concat(xdmp:modules-root(), '../dist'))/dir:entry[
             ends-with(dir:filename, '.xml')]
