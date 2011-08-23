@@ -130,10 +130,11 @@ This is a more complex example.
         let $uri := concat('/lorem-ipsum/', $e/dir:filename)
         return xdmp:document-load(
         $e/dir:pathname,
-        <options xmlns="xdmp:document-load">
-          <uri>{ $uri }</uri>
-          <collections><collection>TEST</collection></collections>
-        </options>)
+        &lt;options xmlns="xdmp:document-load"&gt;
+          &lt;uri&gt;{ $uri }&lt;/uri&gt;
+          &lt;collections&gt;
+            &lt;collection&gt;TEST&lt;/collection&gt;&lt;/collections&gt;
+        &lt;/options&gt;)
       </setup>
       <unit result="1" note="check library module imports">1</unit>
       <unit result="23">xdmp:estimate(collection('TEST'))</unit>
