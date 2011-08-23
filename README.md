@@ -75,6 +75,9 @@ to `xdmp:eval`.
 * `user-id`
 * `root`
 
+The attribute `database-name` is resolved to a database id, and then
+treated as if the `database` option were set.
+
 Besides these `xdmp:eval` options, each environment element may
 include any number of library module imports. Each `import` element
 must include the following attributes:
@@ -99,6 +102,50 @@ the value of `unit/@result`:
     import module namespace foo = "com.example.foo" at "lib-foo.xqy";
     1 * 2
 ```
+
+There may also be any number of `setup` elements. The text of each
+`setup` element will be evaluated before any `unit` elements are
+evaluated. The `environment` options and imports also apply to `setup`
+expressions.
+
+## Example
+
+This is a more complex example.
+
+```xquery
+    <suite xmlns="com.blakeley.xqut">
+      <environment
+       root="/Users/nemo/Source/myproject-xquery/src/"
+       database-name="my-database" >
+        <import prefix="foo" ns="http://example.com/foo"
+                at="/lib-foo.xqy"/>
+        <import prefix="bar" ns="http://example.com/bar"
+                at="/lib-bar.xqy"/>
+      </environment>
+      <setup>xdmp:collection-delete('TEST')</setup>
+      <setup note="load sample documents>
+        for $e in xdmp:filesystem-directory(
+          concat(xdmp:modules-root(), '../dist'))/dir:entry[
+            ends-with(dir:filename, '.xml')]
+        let $uri := concat('/lorem-ipsum/', $e/dir:filename)
+        return xdmp:document-load(
+        $e/dir:pathname,
+        <options xmlns="xdmp:document-load">
+          <uri>{ $uri }</uri>
+          <collections><collection>TEST</collection></collections>
+        </options>)
+      </setup>
+      <unit result="1" note="check library module imports">1</unit>
+      <unit result="23">xdmp:estimate(collection('TEST'))</unit>
+      <unit result="17">count(foo:bar('baz'))</unit>
+      <unit>
+        <expr>foo:bar('baz')[1]</expr>
+        <result><fubar><foo/><bar/><baz/></fubar></result>
+      </unit>
+    </suite>
+```
+
+## Limitations
 
 At this time, XQUT does not provide a way to insert other prolog
 declarations. Patches are welcome.
