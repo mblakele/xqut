@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ : Copyright (c) 2011 Michael Blakeley. All Rights Reserved.
+ :
+ : Licensed under the Apache License, Version 2.0 (the "License");
+ : you may not use this file except in compliance with the License.
+ : You may obtain a copy of the License at
+ :
+ : http://www.apache.org/licenses/LICENSE-2.0
+ :
+ : Unless required by applicable law or agreed to in writing, software
+ : distributed under the License is distributed on an "AS IS" BASIS,
+ : WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ : See the License for the specific language governing permissions and
+ : limitations under the License.
+ :
+ : The use of the Apache License does not indicate that this project is
+ : affiliated with the Apache Software Foundation.
+ -->
+<suite xmlns="com.blakeley.xqut"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <environment
+   root="/Users/mblakele/Source/mblakele-xqut/test/"
+   database-name="App-Services" >
+    <import prefix="lib" ns="com.blakeley.xqut.test"
+            at="lib.xqy"/>
+  </environment>
+
+  <setup>current-dateTime()</setup>
+
+  <unit result="1" note="parse test">1</unit>
+  <unit result="App-Services">xdmp:database-name(xdmp:database())</unit>
+
+  <unit>
+    <expr>lib:one()</expr>
+    <result xsi:type="xs:integer">17</result>
+  </unit>
+
+  <unit>
+    <expr>
+      lib:two('foo')
+    </expr>
+    <result><foo xmlns=""/></result>
+  </unit>
+
+</suite>

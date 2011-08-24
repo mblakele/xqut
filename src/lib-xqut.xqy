@@ -31,6 +31,8 @@ declare default element namespace "com.blakeley.xqut";
 
 declare default function namespace "http://www.w3.org/2005/xpath-functions";
 
+declare boundary-space strip;
+
 declare private variable $CONTEXT-DEFAULTS := (
   let $m := map:map()
   let $put := (
@@ -91,7 +93,7 @@ declare private function t:eval-check(
   $pass as xs:string,
   $fail as xs:string,
   $error as xs:string,
-  $assert as item()?)
+  $assert as item()*)
 as xs:string
 {
   if ($result instance of element(error:error)) then $error
@@ -101,12 +103,11 @@ as xs:string
   (: TODO - implement more complex behavior :)
   case attribute(result) return (
     if (deep-equal($assert/string(), string($result))) then $pass else $fail)
-  case element(result) return (
-    if (deep-equal($assert/node(), $result)) then $pass else $fail)
   case element(setup) return $pass
-  case xs:boolean return (
-    if (exists($result) and ($result eq $assert)) then $pass else $fail)
-  default return t:fatal('UNEXPECTED-ASSERT', $assert)
+  case xs:anyAtomicType return (
+    if (deep-equal($assert, $result)) then $pass else $fail)
+  default return (
+    if (deep-equal($assert, $result)) then $pass else $fail)
 };
 
 declare private function t:eval-expr(
@@ -127,7 +128,7 @@ declare private function t:eval-expr(
   $error as xs:string,
   $pass as xs:string,
   $fail as xs:string,
-  $assert as item()?)
+  $assert as item()*)
 as element()
 {
   let $start := xdmp:elapsed-time()
@@ -230,7 +231,20 @@ as element()
     t:environment($e/environment, $context),
     ($e/@note, xdmp:path($e))[1],
     'error', 'pass', 'fail',
-    ($e/@result, $e/result)
+    (: attributes are always atomic :)
+    if (exists($e/@result)) then $e/@result/data(.)
+    (: elements may be atomic :)
+    else if (empty($e/result/(
+          comment()
+          |element()
+          |processing-instruction()))) then $e/result/data(.)
+    (: Looks like XML structure,
+     : but exclude empty text nodes to allow intended XML.
+     : This introduces a limitation...
+     : we may not catch some differences in pretty-printed output.
+     :)
+    else $e/result/node()[
+      not(. instance of text() and string-length(normalize-space(.)) eq 0)]
   )
 };
 
