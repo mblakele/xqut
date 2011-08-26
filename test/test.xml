@@ -30,18 +30,32 @@
   <setup>current-dateTime()</setup>
 
   <unit result="1" note="parse test">1</unit>
-  <unit result="App-Services">xdmp:database-name(xdmp:database())</unit>
 
-  <unit>
+  <unit result="1" note="this test should fail">1 to 10</unit>
+
+  <unit note="database name" result="App-Services">
+    xdmp:database-name(xdmp:database())
+  </unit>
+
+  <unit note="lib 1">
     <expr>lib:one()</expr>
     <result xsi:type="xs:integer">17</result>
   </unit>
 
-  <unit>
+  <unit note="lib 2">
     <expr>
       lib:two('foo')
     </expr>
     <result><foo xmlns=""/></result>
+  </unit>
+
+  <unit note="boundary-space">
+    <expr>element a { element b {} }</expr>
+    <result>
+      <a xmlns="">
+        <b/>
+      </a>
+    </result>
   </unit>
 
 </suite>

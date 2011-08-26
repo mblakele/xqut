@@ -31,8 +31,6 @@ declare default element namespace "com.blakeley.xqut";
 
 declare default function namespace "http://www.w3.org/2005/xpath-functions";
 
-declare boundary-space strip;
-
 declare private variable $CONTEXT-DEFAULTS := (
   let $m := map:map()
   let $put := (
@@ -47,6 +45,31 @@ declare private variable $CONTEXT-DEFAULTS := (
 );
 
 declare private variable $DEBUG := true();
+
+(: This function quotes an XML node,
+ : and then reparses it with canonical indentation
+ : and encoding. This is needed in order to compare nodes
+ : that differ by indentation whitespace.
+ :)
+declare private function t:canonicalize(
+  $i as item())
+as item()
+{
+  typeswitch($i)
+  case attribute() return $i
+  case binary() return $i
+  case comment() return $i
+  case document-node() return document { t:canonicalize($i/node()) }
+  case element() return element { node-name($i) } {
+    t:canonicalize(($i/@*, $i/node())) }
+  case processing-instruction() return $i
+  case text() return (
+    (: within XML, normalize whitespace that looks like indentation :)
+    if (count($i/../node()) lt 1) then $i else
+      let $nws := normalize-space($i)
+      return if ($nws eq '') then $nws else $i)
+  default return $i
+};
 
 declare private function t:environment(
   $e as element(environment)*,
@@ -97,15 +120,11 @@ declare private function t:eval-check(
 as xs:string
 {
   if ($result instance of element(error:error)) then $error
-  else if (empty($assert)) then $pass
   (: enforce the assertion, whatever it might be :)
   else typeswitch($assert)
-  (: TODO - implement more complex behavior :)
   case attribute(result) return (
     if (deep-equal($assert/string(), string($result))) then $pass else $fail)
   case element(setup) return $pass
-  case xs:anyAtomicType return (
-    if (deep-equal($assert, $result)) then $pass else $fail)
   default return (
     if (deep-equal($assert, $result)) then $pass else $fail)
 };
@@ -115,10 +134,7 @@ declare private function t:eval-expr(
   $context as map:map)
 as item()*
 {
-  xdmp:eval(
-    concat(map:get($context, 'imports'), $expr),
-    t:eval-vars($context),
-    t:eval-options($context))
+  xdmp:eval($expr, t:eval-vars($context), t:eval-options($context))
 };
 
 declare private function t:eval-expr(
@@ -131,15 +147,28 @@ declare private function t:eval-expr(
   $assert as item()*)
 as element()
 {
+  if (string-length(normalize-space($expr)) gt 0) then ()
+  else t:fatal('EMPTYEXPR', xdmp:quote($expr))
+  ,
+  let $expr := concat(map:get($context, 'imports'), $expr)
   let $start := xdmp:elapsed-time()
-  let $result := try { t:eval-expr($expr, $context) } catch ($ex) { $ex }
+  let $result := try {
+    t:eval-expr($expr, $context) } catch ($ex) { $ex }
+  let $elapsed := xdmp:elapsed-time() - $start
+  let $assert := t:canonicalize($assert)
+  let $result := t:canonicalize($result)
   let $ln := t:eval-check($result, $pass, $fail, $error, $assert)
   return element { xs:QName($ln) } {
     attribute note { $note },
-    attribute elapsed { xdmp:elapsed-time() - $start },
-    if ($ln eq $pass) then () else (
-      element assert { $assert },
-      $result ) }
+    if ($ln eq $pass) then attribute elapsed { $elapsed }
+    else (
+      element expr { xdmp:quote($expr) },
+      element assert {
+        attribute description { xdmp:describe($assert) },
+        $assert },
+      element result {
+        attribute description { xdmp:describe($result) },
+        $result })}
 };
 
 declare private function t:eval-options(
