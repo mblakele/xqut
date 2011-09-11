@@ -31,7 +31,7 @@
 
   <unit result="1" note="parse test">1</unit>
 
-  <unit result="1" note="this test should fail">1 to 10</unit>
+  <unit result="-1" note="this test should fail">xdmp:random(10)</unit>
 
   <unit note="database name" result="App-Services">
     xdmp:database-name(xdmp:database())
@@ -56,6 +56,13 @@
         <b/>
       </a>
     </result>
+  </unit>
+
+  <unit note="sequence">
+    <expr>1 to 3</expr>
+    <result>1</result>
+    <result>2</result>
+    <result>3</result>
   </unit>
 
 </suite>
