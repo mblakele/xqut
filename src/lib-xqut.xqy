@@ -92,13 +92,13 @@ as map:map
     ,
     map:put(
       $new, 'imports', concat(
-        map:get($old, 'imports'),
-        for $i in $e/import
-        return concat(
-          'import module namespace ', $i/@prefix,
-          '=', xdmp:describe($i/@ns/string(), 1024),
-          ' at ', xdmp:describe($i/@at/string(), 1024), '; ')))
-  )
+        string-join(
+          (map:get($old, 'imports'),
+            for $i in $e/import
+            return concat(
+              'import module namespace ', $i/@prefix,
+              '=', xdmp:describe($i/@ns/string(), 1024),
+              ' at ', xdmp:describe($i/@at/string(), 1024), '; ')), ' '))))
   return $new
 };
 
