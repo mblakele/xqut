@@ -18,13 +18,17 @@
  : affiliated with the Apache Software Foundation.
  -->
 <suite xmlns="com.blakeley.xqut"
- xmlns:xs="http://www.w3.org/2001/XMLSchema"
- xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+       xmlns:xs="http://www.w3.org/2001/XMLSchema"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:cts="http://marklogic.com/cts">
+
   <environment
    root="/Users/mblakele/Source/mblakele-xqut/test/"
    database-name="App-Services" >
     <import prefix="lib" ns="com.blakeley.xqut.test"
             at="lib.xqy"/>
+    <namespace prefix="t" ns="test"/>
+    <variable symbol="TEST">xdmp:request-timestamp()</variable>
   </environment>
 
   <setup>current-dateTime()</setup>
@@ -49,6 +53,16 @@
     <result><foo xmlns=""/></result>
   </unit>
 
+  <unit note="variable">
+    <expr>exists($TEST)</expr>
+    <result xsi:type="xs:boolean">1</result>
+  </unit>
+
+  <unit note="namespace declaration">
+    <expr>namespace-uri(element t:test { () })</expr>
+    <result xsi:type="xs:anyURI">test</result>
+  </unit>
+
   <unit note="boundary-space">
     <expr>element a { element b {} }</expr>
     <result>
@@ -63,6 +77,25 @@
     <result>1</result>
     <result>2</result>
     <result>3</result>
+  </unit>
+
+  <unit note="cts:query with prefix anomaly">
+    <result>
+      <cts:element-query>
+        <cts:element xmlns:a="cts-query-test">a:title</cts:element>
+        <cts:word-query>
+          <cts:text xml:lang="en">bar</cts:text>
+        </cts:word-query>
+        </cts:element-query>
+    </result>
+    <expr>
+      <cts:element-query>
+        <cts:element xmlns:b="cts-query-test">b:title</cts:element>
+        <cts:word-query>
+          <cts:text xml:lang="en">bar</cts:text>
+        </cts:word-query>
+      </cts:element-query>
+    </expr>
   </unit>
 
 </suite>

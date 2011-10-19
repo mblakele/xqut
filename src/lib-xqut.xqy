@@ -44,7 +44,9 @@ declare private variable $CONTEXT-DEFAULTS := (
   return $m
 );
 
-declare private variable $DEBUG := true();
+declare private variable $DEBUG := false();
+
+declare private variable $NL := codepoints-to-string(10);
 
 (: This function quotes an XML node,
  : and then reparses it with canonical indentation
@@ -61,6 +63,7 @@ as item()
   case comment() return $i
   case document-node() return document { t:canonicalize($i/node()) }
   case element() return element { node-name($i) } {
+    $i/namespace::*,
     t:canonicalize(($i/@*, $i/node())) }
   case processing-instruction() return $i
   case text() return (
@@ -91,6 +94,15 @@ as map:map
         else map:put($new, $k, $a/string()) ))
     ,
     map:put(
+      $new, 'namespaces', concat(
+        string-join(
+          (map:get($old, 'namespaces'),
+            for $i in $e/namespace
+            return concat(
+              'declare namespace ', $i/@prefix,
+              '=', xdmp:describe($i/@ns/string(), 1024), ';')),
+          $NL))),
+    map:put(
       $new, 'imports', concat(
         string-join(
           (map:get($old, 'imports'),
@@ -98,7 +110,17 @@ as map:map
             return concat(
               'import module namespace ', $i/@prefix,
               '=', xdmp:describe($i/@ns/string(), 1024),
-              ' at ', xdmp:describe($i/@at/string(), 1024), '; ')), ' '))))
+              ' at ', xdmp:describe($i/@at/string(), 1024), ';')),
+          $NL))),
+    map:put(
+      $new, 'variables', concat(
+        string-join(
+          (map:get($old, 'variables'),
+            for $i in $e/variable
+            return concat(
+              'declare variable $', $i/@symbol,
+              ' := ', $i/string(), ';')),
+          $NL))))
   return $new
 };
 
@@ -111,6 +133,38 @@ as empty-sequence()
   else xdmp:log((concat('[XQUT/', $label, ']'), $body), 'debug')
 };
 
+(: The XML for cts:query can take on funny variations,
+ : which aren't handled by deep-equal.
+ : Comparing cts:query items is common enough
+ : to include this code in the test framework.
+ :)
+declare private function t:cts-query-normalize(
+  $n as node())
+as node()
+{
+  typeswitch($n)
+  case element(cts:element) return element cts:element {
+    (: normalize namespace prefixes to match the evaluation context :)
+    let $qn := try { resolve-QName($n/string(), $n) } catch ($e) {
+      if ($e/error:code eq 'XDMP-NONAMESPACEBIND') then xs:QName($n)
+      else xdmp:rethrow() }
+    return QName(namespace-uri-from-QName($qn), local-name-from-QName($qn)) }
+  case element() return element { node-name($n) } {
+    $n/@*,
+    t:cts-query-normalize($n/node()) }
+  default return $n
+};
+
+declare private function t:eval-check2(
+  $result as item()*,
+  $pass as xs:string,
+  $fail as xs:string,
+  $assert as item()*)
+as xs:string
+{
+  if (deep-equal($assert, $result)) then $pass else $fail
+};
+
 declare private function t:eval-check(
   $result as item()*,
   $pass as xs:string,
@@ -121,12 +175,20 @@ as xs:string
 {
   if ($result instance of element(error:error)) then $error
   (: enforce the assertion, whatever it might be :)
-  else typeswitch($assert)
-  case attribute(result) return (
-    if (deep-equal($assert/string(), string($result))) then $pass else $fail)
-  case element(setup) return $pass
-  default return (
-    if (deep-equal($assert, $result)) then $pass else $fail)
+  else (
+    typeswitch($assert)
+    case attribute(result) return t:eval-check2(
+      $result/string(), $pass, $fail, $assert/string())
+    case element(setup) return $pass
+    (: clean up namespace prefixes for deep-equal :)
+    case element(*,cts:query) return t:eval-check2(
+      t:cts-query-normalize($result), $pass, $fail,
+      t:cts-query-normalize($assert))
+    (: deep-equal does not work with cts:query, so recurse with XML form :)
+    case cts:query return t:eval-check(
+      document { $result }/cts:query, $pass, $fail, $error,
+      document { $assert }/cts:query)
+    default return t:eval-check2($result, $pass, $fail, $assert))
 };
 
 declare private function t:eval-expr(
@@ -134,6 +196,7 @@ declare private function t:eval-expr(
   $context as map:map)
 as item()*
 {
+  t:debug('eval-expr', $expr),
   xdmp:eval($expr, t:eval-vars($context), t:eval-options($context))
 };
 
@@ -150,7 +213,10 @@ as element()
   if (string-length(normalize-space($expr)) gt 0) then ()
   else t:fatal('EMPTYEXPR', xdmp:quote($expr))
   ,
-  let $expr := concat(map:get($context, 'imports'), $expr)
+  let $expr := string-join(
+    (for $i in ('namespaces', 'imports', 'variables', 'functions')
+      return map:get($context, $i),
+      $expr), $NL)
   let $start := xdmp:elapsed-time()
   let $result := try {
     t:eval-expr($expr, $context) } catch ($ex) { $ex }
@@ -162,7 +228,9 @@ as element()
     attribute note { $note },
     if ($ln eq $pass) then attribute elapsed { $elapsed }
     else (
-      element expr { xdmp:quote($expr) },
+      element expr {
+        attribute xml:space { 'preserve' },
+        $expr },
       element assert {
         attribute description { xdmp:describe($assert) },
         $assert },
@@ -256,7 +324,11 @@ declare private function t:unit(
 as element()
 {
   t:eval-expr(
-    text { ($e/expr, $e)[1] },
+    if (exists($e/expr/node() except $e/expr/text()))
+    then xdmp:quote($e/expr/node())
+    else if (exists($e/expr)) then $e/expr/string()
+    else $e/string()
+    ,
     t:environment($e/environment, $context),
     ($e/@note, xdmp:path($e))[1],
     'error', 'pass', 'fail',
@@ -290,6 +362,7 @@ as element()*
   case element(setup) return ()
   case element(suite) return t:suite($n, $context)
   case element(unit) return t:unit($n, $context)
+  case element(variable) return ()
   default return t:fatal('UNEXPECTED', $n)
 };
 
