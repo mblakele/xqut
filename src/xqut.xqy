@@ -30,3 +30,5 @@ import module namespace t = "com.blakeley.xqut" at "lib-xqut.xqy";
 declare variable $SUITE external ;
 
 t:test($SUITE)
+
+(: xqut.xqy :)

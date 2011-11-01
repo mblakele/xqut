@@ -53,7 +53,7 @@ declare private variable $NL := codepoints-to-string(10);
  : and encoding. This is needed in order to compare nodes
  : that differ by indentation whitespace.
  :)
-declare private function t:canonicalize(
+declare function t:canonicalize(
   $i as item())
 as item()
 {
@@ -137,8 +137,10 @@ as empty-sequence()
  : which aren't handled by deep-equal.
  : Comparing cts:query items is common enough
  : to include this code in the test framework.
+ :
+ : The signature for $n cannot be more specific because of recursion.
  :)
-declare private function t:cts-query-normalize(
+declare function t:cts-query-normalize(
   $n as node())
 as node()
 {
@@ -185,6 +187,7 @@ as xs:string
       t:cts-query-normalize($result), $pass, $fail,
       t:cts-query-normalize($assert))
     (: deep-equal does not work with cts:query, so recurse with XML form :)
+    (: NB - expect errors for cts:query $result and element() $assert :)
     case cts:query return t:eval-check(
       document { $result }/cts:query, $pass, $fail, $error,
       document { $assert }/cts:query)
