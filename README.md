@@ -42,10 +42,12 @@ or a pair of `expr` and `result` child elements.
 You may declare test XML directly, or supply test XML from a document
 in the database using `doc`,  or on the filesystem or network using
 `xdmp:document-load`. The results are XML, so we can use XPath as
-normal. To see only the failures, for example:
+usual. To see only the failures, for example:
 
 ```xquery
     xquery version "1.0-ml";
+    declare namespace xqut="com.blakeley.xqut";
+
     xdmp:invoke(
       'xqut.xqy',
       (xs:QName('SUITE'),
@@ -58,7 +60,7 @@ normal. To see only the failures, for example:
     </suite>),
       <options xmlns="xdmp:eval">
         <root>/Users/nemo/Source/mblakele-xqut/src/</root>
-      </options>)
+      </options>)/(xqut:setup-error|xqut:fail)
 ```
 
 ## Options
