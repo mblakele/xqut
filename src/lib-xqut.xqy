@@ -182,6 +182,7 @@ as xs:string
     case attribute(result) return t:eval-check2(
       $result/string(), $pass, $fail, $assert/string())
     case element(setup) return $pass
+    case element(teardown) return $pass
     (: clean up namespace prefixes for deep-equal :)
     case element(*,cts:query) return t:eval-check2(
       t:cts-query-normalize($result), $pass, $fail,
@@ -291,6 +292,18 @@ as element()
     'setup-error', 'setup-ok', '__BUG', $e)
 };
 
+declare private function t:teardown(
+  $e as element(teardown),
+  $context as map:map)
+as element()
+{
+  t:debug('teardown', $e),
+  let $context := t:environment($e/environment, $context)
+  return t:eval-expr(
+    $e, $context, ($e/@note, xdmp:path($e))[1],
+    'teardown-error', 'teardown-ok', '__BUG', $e)
+};
+
 declare private function t:suite(
   $e as element(suite),
   $context as map:map)
@@ -299,7 +312,8 @@ declare private function t:suite(
   let $context := t:environment($e/environment, $context)
   return element results {
     t:setup($e/setup, $context),
-    t:walk($e/*, $context)
+    t:walk($e/*, $context),
+    t:teardown($e/teardown, $context)
   }
 };
 
@@ -359,10 +373,11 @@ as element()*
 {
   typeswitch($n)
   case document-node() return t:walk($n/*, $context)
-  (: NB - context and setup need to be explicit :)
+  (: NB - context, setup, and teardown need to be explicit :)
   case element(environment) return ()
   case element(import) return ()
   case element(setup) return ()
+  case element(teardown) return ()
   case element(suite) return t:suite($n, $context)
   case element(unit) return t:unit($n, $context)
   case element(variable) return ()

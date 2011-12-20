@@ -98,4 +98,6 @@
     </expr>
   </unit>
 
+  <teardown>xdmp:elapsed-time()</teardown>
+
 </suite>

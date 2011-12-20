@@ -22,15 +22,18 @@
     elementFormDefault="qualified"
     targetNamespace="com.blakeley.xqut"
     xmlns:t="com.blakeley.xqut">
+
   <xs:element name="suite">
     <xs:complexType>
       <xs:sequence>
         <xs:element ref="t:environment"/>
         <xs:element maxOccurs="unbounded" ref="t:setup"/>
         <xs:element maxOccurs="unbounded" ref="t:unit"/>
+        <xs:element maxOccurs="unbounded" ref="t:teardown"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
+
   <xs:element name="environment">
     <xs:complexType>
       <xs:sequence>
@@ -40,6 +43,7 @@
       <xs:attribute name="root" use="required"/>
     </xs:complexType>
   </xs:element>
+
   <xs:element name="import">
     <xs:complexType>
       <xs:attribute name="at" use="required" type="xs:string"/>
@@ -47,6 +51,7 @@
       <xs:attribute name="prefix" use="required" type="xs:NCName"/>
     </xs:complexType>
   </xs:element>
+
   <xs:element name="setup" type="xs:string"/>
   <xs:element name="unit">
     <xs:complexType mixed="true">
@@ -58,7 +63,9 @@
       <xs:attribute name="result" type="xs:string"/>
     </xs:complexType>
   </xs:element>
+
   <xs:element name="expr" type="xs:string"/>
+
   <xs:element name="result">
     <xs:annotation>
     <xs:documentation>allow anything</xs:documentation></xs:annotation>
@@ -72,4 +79,17 @@
       </xs:complexContent>
     </xs:complexType>
   </xs:element>
+
+  <xs:element name="teardown" type="xs:string"/>
+  <xs:element name="unit">
+    <xs:complexType mixed="true">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="t:expr"/>
+        <xs:element ref="t:result"/>
+      </xs:choice>
+      <xs:attribute name="note" type="xs:string"/>
+      <xs:attribute name="result" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
+
 </xs:schema>
