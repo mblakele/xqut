@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- : Copyright (c) 2011 Michael Blakeley. All Rights Reserved.
+ : Copyright (c) 2011-2012 Michael Blakeley. All Rights Reserved.
  :
  : Licensed under the Apache License, Version 2.0 (the "License");
  : you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@
   <xs:element name="environment">
     <xs:complexType>
       <xs:sequence>
-        <xs:element ref="t:import"/>
+        <xs:element maxOccurs="unbounded" ref="t:import"/>
+        <xs:element maxOccurs="unbounded" ref="t:namespace"/>
+        <xs:element maxOccurs="unbounded" ref="t:variable"/>
       </xs:sequence>
       <xs:attribute name="database-name" use="required" type="xs:NCName"/>
       <xs:attribute name="root" use="required"/>
@@ -52,7 +54,27 @@
     </xs:complexType>
   </xs:element>
 
+  <xs:element name="namespace">
+    <xs:complexType>
+      <xs:attribute name="ns" use="required" type="xs:NCName"/>
+      <xs:attribute name="prefix" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="variable">
+    <xs:complexType>
+      <xs:simpleContent>
+        <xs:extension base="xs:anyURI">
+          <xs:attribute name="symbol" use="required" type="xs:NCName"/>
+        </xs:extension>
+      </xs:simpleContent>
+    </xs:complexType>
+  </xs:element>
+
   <xs:element name="setup" type="xs:string"/>
+
+  <xs:element name="teardown" type="xs:string"/>
+
   <xs:element name="unit">
     <xs:complexType mixed="true">
       <xs:choice minOccurs="0" maxOccurs="unbounded">
@@ -64,11 +86,10 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="expr" type="xs:string"/>
-
-  <xs:element name="result">
+  <xs:element name="expr">
     <xs:annotation>
-    <xs:documentation>allow anything</xs:documentation></xs:annotation>
+      <xs:documentation>allow anything</xs:documentation>
+    </xs:annotation>
     <xs:complexType mixed="true">
       <xs:complexContent>
         <xs:restriction base="xs:anyType">
@@ -80,15 +101,18 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="teardown" type="xs:string"/>
-  <xs:element name="unit">
+  <xs:element name="result">
+    <xs:annotation>
+      <xs:documentation>allow anything</xs:documentation>
+    </xs:annotation>
     <xs:complexType mixed="true">
-      <xs:choice minOccurs="0" maxOccurs="unbounded">
-        <xs:element ref="t:expr"/>
-        <xs:element ref="t:result"/>
-      </xs:choice>
-      <xs:attribute name="note" type="xs:string"/>
-      <xs:attribute name="result" type="xs:string"/>
+      <xs:complexContent>
+        <xs:restriction base="xs:anyType">
+          <xs:sequence>
+            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:restriction>
+      </xs:complexContent>
     </xs:complexType>
   </xs:element>
 

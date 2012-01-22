@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- : Copyright (c) 2011 Michael Blakeley. All Rights Reserved.
+ : Copyright (c) 2011-2012 Michael Blakeley. All Rights Reserved.
  :
  : Licensed under the Apache License, Version 2.0 (the "License");
  : you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@
   </environment>
 
   <setup>current-dateTime()</setup>
+
+  <setup>$TEST</setup>
 
   <unit result="1" note="parse test">1</unit>
 
