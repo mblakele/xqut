@@ -23,23 +23,55 @@
        xmlns:cts="http://marklogic.com/cts">
 
   <environment
-   root="/Users/mblakele/Source/mblakele-xqut/test/"
-   database-name="App-Services" >
+   root="/Users/mblakele/Source/mblakele-xqut/"
+   database-name="Documents" >
     <import prefix="lib" ns="com.blakeley.xqut.test"
-            at="lib.xqy"/>
+            at="test/lib.xqy"/>
     <namespace prefix="t" ns="test"/>
     <variable symbol="TEST">xdmp:request-timestamp()</variable>
+    <variable symbol="SCHEMA">
+      xdmp:document-get(
+        concat(xdmp:modules-root(), "src/xqut.xsd"))
+    </variable>
   </environment>
 
   <setup>current-dateTime()</setup>
 
   <setup>$TEST</setup>
 
-  <unit result="1" note="parse test">1</unit>
+  <setup note="insert xqut schema, for validation tests">
+    xdmp:eval('
+      declare variable $SCHEMA external;
+      xdmp:document-insert("xqut.xsd", $SCHEMA)'
+      , (xs:QName('SCHEMA'), $SCHEMA),
+      &lt;options xmlns="xdmp:eval">
+        &lt;database>{ xdmp:schema-database() }&lt;/database>
+      &lt;/options>)
+  </setup>
+
+  <unit result="" note="parse test">''</unit>
 
   <unit result="-1" note="this test should fail">xdmp:random(10)</unit>
 
-  <unit note="database name" result="App-Services">
+  <unit note="validate schema">
+    <result xsi:type="xs:boolean">1</result>
+    <expr>
+      validate strict { $SCHEMA } instance of document-node()
+    </expr>
+  </unit>
+
+<!-- TODO must find a way to allow xsi:type="xs:boolean" with this -->
+  <unit note="validate suite">
+    <result xsi:type="xs:boolean">1</result>
+    <expr>
+      validate strict {
+        xdmp:document-get(
+          concat(xdmp:modules-root(), 'test/test.xml')) }
+      instance of document-node()
+    </expr>
+  </unit>
+
+  <unit note="database name" result="Documents">
     xdmp:database-name(xdmp:database())
   </unit>
 

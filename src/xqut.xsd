@@ -71,9 +71,27 @@
     </xs:complexType>
   </xs:element>
 
-  <xs:element name="setup" type="xs:string"/>
+  <xs:element name="setup" type="xs:string">
+    <xs:complexType mixed="true">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="t:expr"/>
+        <xs:element ref="t:result"/>
+      </xs:choice>
+      <xs:attribute name="fatal" type="xs:boolean"/>
+      <xs:attribute name="note" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
 
-  <xs:element name="teardown" type="xs:string"/>
+  <xs:element name="teardown" type="xs:string">
+    <xs:complexType mixed="true">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="t:expr"/>
+        <xs:element ref="t:result"/>
+      </xs:choice>
+      <xs:attribute name="fatal" type="xs:boolean"/>
+      <xs:attribute name="note" type="xs:string"/>
+    </xs:complexType>
+  </xs:element>
 
   <xs:element name="unit">
     <xs:complexType mixed="true">
@@ -81,6 +99,7 @@
         <xs:element ref="t:expr"/>
         <xs:element ref="t:result"/>
       </xs:choice>
+      <xs:attribute name="fatal" type="xs:boolean"/>
       <xs:attribute name="note" type="xs:string"/>
       <xs:attribute name="result" type="xs:string"/>
     </xs:complexType>
@@ -109,7 +128,8 @@
       <xs:complexContent>
         <xs:restriction base="xs:anyType">
           <xs:sequence>
-            <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+            <xs:any processContents="skip"
+                    minOccurs="0" maxOccurs="unbounded" />
           </xs:sequence>
         </xs:restriction>
       </xs:complexContent>

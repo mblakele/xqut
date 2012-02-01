@@ -207,6 +207,7 @@ as item()*
 declare private function t:eval-expr(
   $expr as xs:string,
   $context as map:map,
+  $fatal as xs:boolean,
   $note as xs:string,
   $error as xs:string,
   $pass as xs:string,
@@ -223,7 +224,12 @@ as element()
       $expr), $NL)
   let $start := xdmp:elapsed-time()
   let $result := try {
-    t:eval-expr($expr, $context) } catch ($ex) { $ex }
+    t:eval-expr($expr, $context) } catch ($ex) {
+    if (not($fatal)) then $ex
+    else t:fatal(
+      'FATAL',
+      ($expr, $ex/error:code, $ex/error:message,
+        'line', $ex/error:stack/error:frame[1]/error:line)) }
   let $elapsed := xdmp:elapsed-time() - $start
   let $assert := t:canonicalize($assert)
   let $result := t:canonicalize($result)
@@ -288,7 +294,8 @@ as element()
   t:debug('setup', $e),
   let $context := t:environment($e/environment, $context)
   return t:eval-expr(
-    $e, $context, ($e/@note, xdmp:path($e))[1],
+    $e, $context, ($e/@fatal/xs:boolean(.), false())[1],
+    ($e/@note, xdmp:path($e))[1],
     'setup-error', 'setup-ok', '__BUG', $e)
 };
 
@@ -300,7 +307,8 @@ as element()
   t:debug('teardown', $e),
   let $context := t:environment($e/environment, $context)
   return t:eval-expr(
-    $e, $context, ($e/@note, xdmp:path($e))[1],
+    $e, $context, ($e/@fatal/xs:boolean(.), false())[1],
+    ($e/@note, xdmp:path($e))[1],
     'teardown-error', 'teardown-ok', '__BUG', $e)
 };
 
@@ -347,6 +355,7 @@ as element()
     else $e/string()
     ,
     t:environment($e/environment, $context),
+    ($e/@fatal/xs:boolean(.), false())[1],
     ($e/@note, xdmp:path($e))[1],
     'error', 'pass', 'fail',
     (: attributes are always atomic :)
