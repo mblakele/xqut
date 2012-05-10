@@ -94,6 +94,13 @@ as map:map
         else map:put($new, $k, $a/string()) ))
     ,
     map:put(
+      $new, 'options', concat(
+        string-join(
+          (map:get($old, 'options'),
+            if (not($e/boundary-space)) then ()
+            else 'declare boundary-space preserve;'),
+          $NL))),
+    map:put(
       $new, 'namespaces', concat(
         string-join(
           (map:get($old, 'namespaces'),
@@ -219,7 +226,7 @@ as element()
   else t:fatal('EMPTYEXPR', xdmp:quote($expr))
   ,
   let $expr := string-join(
-    (for $i in ('namespaces', 'imports', 'variables', 'functions')
+    (for $i in ('options', 'namespaces', 'imports', 'variables', 'functions')
       return map:get($context, $i),
       $expr), $NL)
   let $start := xdmp:elapsed-time()
@@ -292,9 +299,10 @@ declare private function t:setup(
 as element()
 {
   t:debug('setup', $e),
-  let $context := t:environment($e/environment, $context)
-  return t:eval-expr(
-    $e, $context, ($e/@fatal/xs:boolean(.), false())[1],
+  t:eval-expr(
+    $e,
+    t:environment($e/environment, $context),
+    ($e/@fatal/xs:boolean(.), false())[1],
     ($e/@note, xdmp:path($e))[1],
     'setup-error', 'setup-ok', '__BUG', $e)
 };
@@ -383,6 +391,7 @@ as element()*
   typeswitch($n)
   case document-node() return t:walk($n/*, $context)
   (: NB - context, setup, and teardown need to be explicit :)
+  case element(boundary-space) return ()
   case element(environment) return ()
   case element(import) return ()
   case element(setup) return ()
