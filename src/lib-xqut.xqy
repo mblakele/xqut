@@ -87,6 +87,10 @@ as map:map
     return typeswitch($a)
     case attribute(database-name) return map:put(
       $new, 'database', xdmp:database($a))
+    case attribute(modules-name) return map:put(
+      $new, 'modules', xdmp:database($a))
+    case attribute(user-name) return map:put(
+      $new, 'user-id', xdmp:user($a))
     default return (
       let $k := local-name($a)
       return (

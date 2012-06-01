@@ -77,8 +77,11 @@ to `xdmp:eval`.
 * `user-id`
 * `root`
 
-The attribute `database-name` is resolved to a database id, and then
-treated as if the `database` option were set.
+Certain attributes will be translated automatically from names to ids.
+
+* `database-name` to `database`
+* `modules-name` to `modules`
+* `user-name` to `user-id`
 
 Besides these `xdmp:eval` options, each environment element may
 include any number of library module imports. Each `import` element

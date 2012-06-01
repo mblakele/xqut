@@ -18,9 +18,10 @@
  : affiliated with the Apache Software Foundation.
  -->
 <xs:schema
-    xmlns:xs="http://www.w3.org/2001/XMLSchema"
     elementFormDefault="qualified"
     targetNamespace="com.blakeley.xqut"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:t="com.blakeley.xqut">
 
   <xs:element name="suite">

@@ -49,7 +49,7 @@
       &lt;/options>)
   </setup>
 
-  <unit result="" note="parse test">''</unit>
+  <unit fatal="true" note="parse test">()</unit>
 
   <unit result="-1" note="this test should fail">xdmp:random(10)</unit>
 
@@ -130,6 +130,12 @@
         </cts:word-query>
       </cts:element-query>
     </expr>
+  </unit>
+
+  <unit note="unit-level user-name=nobody">
+    <environment user-name="nobody"/>
+    <expr>xdmp:get-current-user()</expr>
+    <result>nobody</result>
   </unit>
 
   <teardown>xdmp:elapsed-time()</teardown>
