@@ -39,8 +39,7 @@ declare private variable $CONTEXT-DEFAULTS := (
     map:put($m, 'default-xquery-version', xdmp:xquery-version()),
     map:put($m, 'modules', xdmp:modules-database()),
     map:put($m, 'user-id', xdmp:get-request-user()),
-    map:put($m, 'root', xdmp:modules-root())
-  )
+    map:put($m, 'root', xdmp:modules-root()))
   return $m
 );
 
@@ -234,13 +233,8 @@ as element()
       return map:get($context, $i),
       $expr), $NL)
   let $start := xdmp:elapsed-time()
-  let $result := try {
-    t:eval-expr($expr, $context) } catch ($ex) {
-    if (not($fatal)) then $ex
-    else t:fatal(
-      'FATAL',
-      ($expr, $ex/error:code, $ex/error:message,
-        'line', $ex/error:stack/error:frame[1]/error:line)) }
+  let $result := try { t:eval-expr($expr, $context) } catch ($ex) {
+    if ($fatal) then xdmp:rethrow() else $ex }
   let $elapsed := xdmp:elapsed-time() - $start
   let $assert := t:canonicalize($assert)
   let $result := t:canonicalize($result)
@@ -306,7 +300,7 @@ as element()
   t:eval-expr(
     $e,
     t:environment($e/environment, $context),
-    ($e/@fatal/xs:boolean(.), false())[1],
+    ($e/@fatal/xs:boolean(.), true())[1],
     ($e/@note, xdmp:path($e))[1],
     'setup-error', 'setup-ok', '__BUG', $e)
 };
@@ -325,16 +319,29 @@ as element()
 };
 
 declare private function t:suite(
+  $setup as element(setup)*,
+  $list as element()*,
+  $teardown as element(teardown)*,
+  $context as map:map)
+ as element(results)
+{
+  element results {
+    t:setup($setup, $context),
+    t:walk($list, $context),
+    t:teardown($teardown, $context)
+  }
+};
+
+declare private function t:suite(
   $e as element(suite),
   $context as map:map)
  as element(results)
 {
-  let $context := t:environment($e/environment, $context)
-  return element results {
-    t:setup($e/setup, $context),
-    t:walk($e/*, $context),
-    t:teardown($e/teardown, $context)
-  }
+  t:suite(
+    $e/setup,
+    $e/*,
+    $e/teardown,
+    t:environment($e/environment, $context))
 };
 
 declare function t:test(
