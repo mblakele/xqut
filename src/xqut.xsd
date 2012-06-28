@@ -103,6 +103,7 @@
       <xs:attribute name="fatal" type="xs:boolean"/>
       <xs:attribute name="note" type="xs:string"/>
       <xs:attribute name="result" type="xs:string"/>
+      <xs:attribute name="store" type="xs:string"/>
     </xs:complexType>
   </xs:element>
 

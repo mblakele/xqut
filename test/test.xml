@@ -61,6 +61,7 @@
   </unit>
 
 <!-- TODO must find a way to allow xsi:type="xs:boolean" with this -->
+<!--
   <unit note="validate suite">
     <result xsi:type="xs:boolean">1</result>
     <expr>
@@ -70,6 +71,7 @@
       instance of document-node()
     </expr>
   </unit>
+-->
 
   <unit note="database name" result="Documents">
     xdmp:database-name(xdmp:database())
@@ -136,6 +138,15 @@
     <environment user-name="nobody"/>
     <expr>xdmp:get-current-user()</expr>
     <result>nobody</result>
+  </unit>
+
+  <unit note="variable TEMP store" store="TEMP">
+    <expr>1</expr>
+  </unit>
+
+  <unit note="variable TEMP = 1">
+    <expr>$TEMP eq 1</expr>
+    <result xsi:type="xs:boolean">1</result>
   </unit>
 
   <teardown>xdmp:elapsed-time()</teardown>

@@ -43,6 +43,8 @@ declare private variable $CONTEXT-DEFAULTS := (
   return $m
 );
 
+declare private variable $STORAGE-MAP := map:map() ;
+
 declare private variable $DEBUG := false();
 
 declare private variable $NL := codepoints-to-string(10);
@@ -218,6 +220,7 @@ declare private function t:eval-expr(
   $expr as xs:string,
   $context as map:map,
   $fatal as xs:boolean,
+  $store as xs:string?,
   $note as xs:string,
   $error as xs:string,
   $pass as xs:string,
@@ -228,20 +231,35 @@ as element()
   if (string-length(normalize-space($expr)) gt 0) then ()
   else t:fatal('EMPTYEXPR', xdmp:quote($expr))
   ,
+  if (not($store and $assert)) then () else t:fatal(
+    'UNEXPECTED',
+    ('Cannot test result and store result:', xdmp:describe($note)))
+  ,
   let $expr := string-join(
-    (for $i in ('options', 'namespaces', 'imports', 'variables', 'functions')
-      return map:get($context, $i),
+    (map:get($context, ('options', 'namespaces', 'imports', 'variables')),
+      for $key in map:keys($STORAGE-MAP)
+      return concat('declare variable $', $key, ' external;'),
+      map:get($context, 'functions'),
       $expr), $NL)
   let $start := xdmp:elapsed-time()
   let $result := try { t:eval-expr($expr, $context) } catch ($ex) {
-    if ($fatal) then xdmp:rethrow() else $ex }
+    if ($fatal or $store) then xdmp:rethrow() else $ex }
   let $elapsed := xdmp:elapsed-time() - $start
   let $assert := t:canonicalize($assert)
   let $result := t:canonicalize($result)
-  let $ln := t:eval-check($result, $pass, $fail, $error, $assert)
+  let $ln := (
+    if ($store) then $pass
+    else t:eval-check($result, $pass, $fail, $error, $assert))
   return element { xs:QName($ln) } {
     attribute note { $note },
-    if ($ln eq $pass) then attribute elapsed { $elapsed }
+    if ($ln eq $pass) then (
+      attribute elapsed { $elapsed },
+      if (not($store)) then () else map:put(
+        $STORAGE-MAP, $store,
+        if (count($result) eq 1) then $result else t:fatal(
+          'BAD',
+          ('Cannot store result when empty, or multiple results:',
+            xdmp:describe($result)))))
     else (
       element expr {
         attribute xml:space { 'preserve' },
@@ -278,10 +296,11 @@ as item()*
 
 declare private function t:eval-vars(
   $context as map:map)
-as element()*
+as item()*
 {
-  (: TODO - support passing external variables :)
-  ()
+  for $key in map:keys($STORAGE-MAP) return (
+    if (contains($key, ':')) then xs:QName($key) else QName('', $key),
+    map:get($STORAGE-MAP, $key))
 };
 
 declare private function t:fatal(
@@ -301,6 +320,7 @@ as element()
     $e,
     t:environment($e/environment, $context),
     ($e/@fatal/xs:boolean(.), true())[1],
+    (),
     ($e/@note, xdmp:path($e))[1],
     'setup-error', 'setup-ok', '__BUG', $e)
 };
@@ -313,7 +333,7 @@ as element()
   t:debug('teardown', $e),
   let $context := t:environment($e/environment, $context)
   return t:eval-expr(
-    $e, $context, ($e/@fatal/xs:boolean(.), false())[1],
+    $e, $context, ($e/@fatal/xs:boolean(.), false())[1], (),
     ($e/@note, xdmp:path($e))[1],
     'teardown-error', 'teardown-ok', '__BUG', $e)
 };
@@ -367,7 +387,10 @@ declare private function t:unit(
   $context as map:map)
 as element()
 {
-  t:eval-expr(
+  if ($e/result and not($e/expr)) then t:fatal(
+    'UNEXPECTED',
+    ('unit has result without expr:', xdmp:describe($e/@note/string())))
+  else t:eval-expr(
     if (exists($e/expr/node() except $e/expr/text()))
     then xdmp:quote($e/expr/node())
     else if (exists($e/expr)) then $e/expr/string()
@@ -375,6 +398,7 @@ as element()
     ,
     t:environment($e/environment, $context),
     ($e/@fatal/xs:boolean(.), false())[1],
+    $e/@store,
     ($e/@note, xdmp:path($e))[1],
     'error', 'pass', 'fail',
     (: attributes are always atomic :)
@@ -390,8 +414,7 @@ as element()
      : we may not catch some differences in pretty-printed output.
      :)
     else $e/result/node()[
-      not(. instance of text() and string-length(normalize-space(.)) eq 0)]
-  )
+      not(. instance of text() and string-length(normalize-space(.)) eq 0)])
 };
 
 declare private function t:walk(
